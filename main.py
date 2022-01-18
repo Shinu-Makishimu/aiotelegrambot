@@ -80,8 +80,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 # from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
-from data.bot_requests.lowprice import register_handlers_lowprice
+
 from data.bot_requests.common import register_handlers_common
+from data.bot_requests.lowprice import register_handlers_lowprice
+from data.bot_requests.highprice import register_handlers_highprice
+from data.bot_requests.bestdeal import register_handlers_bestdeal
 import settings
 
 logger = logging.getLogger(__name__)
@@ -89,7 +92,9 @@ logger = logging.getLogger(__name__)
 
 async def set_commands(bot: Bot):
     commands = [
-        BotCommand(command="/lowprice", description="показать меню"),
+        BotCommand(command="/bestdeal", description="Лучшее предложение"),
+        BotCommand(command="/highprice", description="Дорого"),
+        BotCommand(command="/lowprice", description="Дешево"),
         BotCommand(command="/cancel", description="Отменить текущее действие")
     ]
     await bot.set_my_commands(commands)
@@ -104,6 +109,8 @@ async def main():
     # Регистрация хэндлеров
     register_handlers_common(dp)
     register_handlers_lowprice(dp)
+    register_handlers_highprice(dp)
+    register_handlers_bestdeal(dp)
 
 
     # Установка команд бота
