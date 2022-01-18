@@ -1,5 +1,6 @@
 import re
 import requests
+import datetime
 from typing import Any, Union, Dict
 from loguru import logger
 
@@ -19,7 +20,7 @@ order = {
 def get_hotels(params: Dict ) -> Dict or None:
     """
     Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
-    :param user_id:
+
     :return: если сайт вернул bad request, возвращает bad request, если результата нет, none
      иначе словарь с результатами
     """
@@ -31,7 +32,7 @@ def get_hotels(params: Dict ) -> Dict or None:
     if 'bad_request' in data:
         return {'bad_request': 'bad_request'}
 
-    data = structure_hotels_info(user_id=user_id, data=data)
+    data = structure_hotels_info(lang=params['language'], data=data)
 
     if not data or len(data['results']) < 1:
         return None
@@ -44,7 +45,7 @@ def get_hotels(params: Dict ) -> Dict or None:
             if 'bad_req' in data:
                 logger.warning('bad_request')
                 break
-            add_data = structure_hotels_info(user_id=user_id, data=add_data)
+            add_data = structure_hotels_info(lang=params['language'], data=add_data)
             if add_data and len(add_data["results"]) > 0:
                 data['results'].extend(add_data['results'])
                 next_page = add_data['next_page']
@@ -55,7 +56,7 @@ def get_hotels(params: Dict ) -> Dict or None:
     else:
         data = data['results']
 
-    data = generate_hotels_descriptions(hotels=data, user_id=user_id)
+    data = generate_hotels_descriptions(hotels=data, parameters=params)
     return data
 
 
@@ -74,8 +75,8 @@ def request_hotels(p: Dict, page=1) -> Dict:
         "destinationId": p['city'],
         "pageNumber": str(page),
         "pageSize": p['hotel_count'],
-        "checkIn": get_date(int(p['date1'])),
-        "checkOut": get_date(int(p['date2'])),
+        "checkIn": datetime.date.today(),
+        "checkOut": datetime.date.today() + datetime.timedelta(days=1),
         "adults1": "1",
         "sortOrder": order[p['command']],
         "locale": p['language'],
@@ -105,14 +106,14 @@ def request_hotels(p: Dict, page=1) -> Dict:
         return {'bad_request': 'bad_request'}
 
 
-def structure_hotels_info(user_id, data) -> Dict or None:
+def structure_hotels_info(lang, data) -> Dict or None:
     """
     Структурирование результатов поиск для удобной обработки в дальнейшем
-    :param user_id:
+
     :param data:
     :return:
     """
-    logger.info(f'Function {structure_hotels_info.__name__} called with args user_id = {user_id}, data = {data}')
+    logger.info(f'Function {structure_hotels_info.__name__} called with args lang = {lang}, data = {data}')
     data = data.get('data', {}).get('body', {}).get('searchResults')
 
     hotels = dict()
@@ -126,22 +127,22 @@ def structure_hotels_info(user_id, data) -> Dict or None:
 
     hotels['next_page'] = data.get('pagination', {}).get('nextPageNumber')
     hotels['results'] = []
-    lang = get_settings(user_id=user_id, key='language')
+
     if hotels['total_count'] > 0:
         for i_hotel in data.get('results'):
             hotel = dict()
             hotel['name'] = i_hotel.get('name')
             hotel['id'] = i_hotel.get('id')
             hotel['star_rating'] = i_hotel.get('starRating', 0)
-            hotel['price'] = hotel_price(i_hotel, lang, user_id)
+            hotel['price'] = hotel_price(i_hotel)
             if not hotel['price']:
                 continue
             hotel['distance'] = i_hotel.get(
                 'landmarks')[0].get(
                     'distance',
-                    interface['errors']['no_information'][lang]
+                    'Нет информации'
             )
-            hotel['address'] = hotel_address(i_hotel, lang=lang)
+            hotel['address'] = hotel_address(i_hotel)
             hotel['coordinates'] = i_hotel.get('coordinate')
             if hotel not in hotels['results']:
                 hotels['results'].append(hotel)
@@ -166,12 +167,12 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
     return hotels
 
 
-def generate_hotels_descriptions(hotels: Dict, user_id: str) -> Dict[Any, Dict[str, Union[str, list[str]]]]:
+def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Dict[str, Union[str, list[str]]]]:
     """
     формирование словаря с сообщением для вывода пользователю и фотографиями
 
+    :param parameters:
     :param hotels: словарь с отелями
-    :param user_id: id пользователя
     :return: hotels_info =
                 {
                     "hotel_ID":
@@ -183,48 +184,27 @@ def generate_hotels_descriptions(hotels: Dict, user_id: str) -> Dict[Any, Dict[s
     """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
     hotels_info = dict()
-    lang = get_settings(user_id=user_id, key='language')
-    photo_number = get_settings(user_id=user_id, key='photo_count')
-    currency = get_settings(user_id=user_id, key='currency')
+    lang = parameters['language']
+    photo_number = parameters['photo_count']
+    currency = parameters['currency']
     for hotel in hotels:
         photo = make_photo_list(
             hotel_id=hotel.get('id'),
             counter=int(photo_number)
         )
-        hot_rat = hotel_rating(rating=hotel.get('star_rating'), lang=lang)
+        hot_rat = hotel_rating(rating=hotel.get('star_rating'))
 
-        lang_hotel = interface['elements']['hotel'][lang],
+        lang_hotel = 'Отель ',
         name_hotel = hotel.get('name'),
-        rating_hotel = interface['elements']['rating'][lang],
+        rating_hotel = 'Класс отеля ',
         rat_h = hot_rat,
-        pri_hot = interface['elements']['price'][lang],
+        pri_hot = 'Цена за ночь ',
         price = str(hotel['price']) + ' ' + currency,
-        dis_h = interface['elements']['distance'][lang],
+        dis_h = 'Расстояние от центра города ',
         dist = hotel.get('distance'),
-        addr_h = interface['elements']['address'][lang],
+        addr_h = 'Адрес ',
         addr = hotel.get('address'),
-        link = google_maps_link(coordinates=hotel['coordinates'], lang=lang)
-
-        # message = (
-        #     f"{interface['elements']['hotel'][lang]}: "
-        #     f"{hotel.get('name')}\n"
-        #
-        #     f"{interface['elements']['rating'][lang]}: "
-        #     f"{hotel_rating(rating=hotel.get('star_rating'), lang=lang)}\n"
-        #
-        #     f"{interface['elements']['price'][lang]}: "
-        #     f"{hotel['price']} {get_settings(user_id=user_id, key='currency')}\n"
-        #
-        #     f"{interface['elements']['distance'][lang]}: "
-        #     f"{hotel.get('distance')}\n"
-        #
-        #     f"{interface['elements']['address'][lang]}: "
-        #     f"{hotel.get('address')}\n"
-        #
-        #     f"{interface['elements']['g_link'][lang]}: "
-        #     f"{google_maps_link(coordinates=hotel['coordinates'],lang=lang)}\n"
-        #
-        # )
+        link = google_maps_link(coordinates=hotel['coordinates'])
 
         message = (
             f"{lang_hotel[0]}: "
@@ -250,85 +230,80 @@ def generate_hotels_descriptions(hotels: Dict, user_id: str) -> Dict[Any, Dict[s
     return hotels_info
 
 
-def hotel_price(hotel, lang, user_id) -> float or str:
+def hotel_price(hotel) -> float or str:
     """
     Функция формирует цену отеля. количество дней проживания перемножается на стоимость суток.
 
     :param hotel: словарь с данными отеля полученными от api
-    :param lang: язык пользователя
-    :param user_id:  id пользователя
     :return: возвращаем цену, округленную до двух знаков. Если цену получить не удалось, возвращаем "нет данных"
     """
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
-    check_in = int(get_settings(user_id=user_id, key='date1'))
-    check_out = int(get_settings(user_id=user_id, key='date2'))
-    days_number = days_count(check_in=check_in, check_out=check_out)
+
     try:
         if hotel.get('ratePlan').get('price').get('exactCurrent'):
             temp_price = hotel.get('ratePlan').get('price').get('exactCurrent')
         else:
             temp_price = hotel.get('ratePlan').get('price').get('current')
-            temp_price = int(re.sub(r'[^0-9]', '', temp_price))
-        price = round(days_number * temp_price, 2)
+
+        temp_price = int(re.sub(r'[^0-9]', '', temp_price))
+        price = round(temp_price, 2)
     except Exception as error:
         logger.warning(f'price crushed with {error}')
-        price = interface['errors']['no_information'][lang]
+        price = 'Нет информации'
     return price
 
 
-def hotel_address(hotel: dict, lang: str) -> str:
+def hotel_address(hotel: dict) -> str:
     """
     Функция формирования адреса. Если адреса нет, возвращаем нет данных
     :param hotel: словарь с данными отеля полученными из API
-    :param lang:  язык пользователя
+
     :return: строка с адресом, если адреса нет, возвращаем нет данных
     """
     logger.info(f'Function {hotel_address.__name__} called with argument {hotel}')
-    message = interface['errors']['no_information'][lang]
+    message = 'Нет информации'
     if hotel.get('address'):
         message = hotel.get('address').get('streetAddress', message)
     return message
 
 
-def hotel_rating(rating: float, lang: str) -> str:
+def hotel_rating(rating: float) -> str:
     """
     Рейтинг отеля.
     :param rating: число звезд.
-    :param lang: язык
     :return: возвращает строку с количеством звездочек, равными рейтингу отеля, если
     информации нет то возвращает строку нет данных
     """
     logger.info(f'Function {hotel_rating.__name__} called with {rating}')
     if not rating:
-        return interface['errors']['no_information'][lang]
+        return 'Нет информаци'
     return '⭐' * int(rating)
 
 
-def google_maps_link(coordinates: dict, lang: str) -> str:
+def google_maps_link(coordinates: dict) -> str:
     """
     формирует ссылку на карты гугл.
     :param coordinates: словарь с широтой и долготой
-    :param lang: язык пользователя
     :return: строка ссылки или нет данных
     """
     if not coordinates:
-        return interface['errors']['no_information'][lang]
-    text = interface['elements']['g_link'][lang]
+        return 'Нет информации'
+    text = 'Ссылка на гуглокарты'
     link = f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
     r = f'<a href="{link}">{text}</a>'
     return r
 
 
-def days_count(check_in: int, check_out: int):
-    """
-    счетчик дней для вычисления итоговой стоимости проживания
-    :param check_in: дата заезда
-    :param check_out: дата выезда
-    :return: целое число дней
-    """
-    logger.info(f'Function {days_count.__name__} was called with { check_in} {check_out}')
-    date_in = get_date(tmstmp=check_in, days=True)
-    date_out = get_date(tmstmp=check_out, days=True)
-    date_result = abs((date_out-date_in).days)
-    logger.info(f'Function {days_count.__name__} make some math: { date_out} minus {date_in} = {date_result}')
-    return date_result
+# def days_count(check_in: int, check_out: int):
+#     """
+#     счетчик дней для вычисления итоговой стоимости проживания
+#     :param check_in: дата заезда
+#     :param check_out: дата выезда
+#     :return: целое число дней
+#     """
+#     logger.info(f'Function {days_count.__name__} was called with { check_in} {check_out}')
+#     date_in = get_date(tmstmp=check_in, days=True)
+#     date_out = get_date(tmstmp=check_out, days=True)
+#     date_result = abs((date_out-date_in).days)
+#     logger.info(f'Function {days_count.__name__} make some math: { date_out} minus {date_in} = {date_result}')
+#     return date_result

@@ -41,20 +41,20 @@ async def hotels_buttons(message: types.Message):
                 text = loc_name,
                 callback_data=f'code{loc_id}'
             ))
-            city_keyboard.add(types.InlineKeyboardButton(
-                text='wrong door',
-                callback_data='code_red'
+        city_keyboard.add(types.InlineKeyboardButton(
+                text='Нет моего варианта',
+                callback_data='codered'
             ))
-            await message.answer('жми кнопка', reply_markup=city_keyboard)
+        await message.answer('Нажмите кнопку', reply_markup=city_keyboard)
         await HotelOrder.waiting_for_city_answer_l.set()
 
 
 async def city_name_chosen(call: types.CallbackQuery, state: FSMContext):
-    if call.data[4:] == 'red':
-        await call.answer("Введите название города.")
+    if call.data == 'code_red':
+        await call.answer("Введите название города повторно")
         return
     await state.update_data(city_id=call.data[4:])
-    await call.answer("сколько отелей выводить ?")
+    await call.message.answer("сколько отелей выводить ?")
     await HotelOrder.next()
     await HotelOrder.waiting_for_hotel_number_l.set()
 
@@ -103,14 +103,41 @@ async def history_chosen(message: types.Message, state: FSMContext):
         return
     await state.update_data(save_history=message.text)
     user_data = await state.get_data()
+    language_replace = {
+        'ru':'ru_RU',
+        'en':'en_US'
+    }
+    language = message.from_user.language_code
+    if language != 'ru':
+        language= language_replace['en']
+    else:
+        language=language_replace['ru']
     parameters = {
         'city':user_data['city_id'],
         'hotel_count': user_data['hotel_number'],
         'photo_count': user_data['photo_number'],
         'command': 'lowprice',
-        'currency': user_data['currency']
+        'currency': user_data['currency'],
+        'language': language
     }
-    await message.answer(f"Вы заказали {parameters}.\nисторию сохранять? {message.text}", reply_markup=types.ReplyKeyboardRemove())
+    await message.answer(
+        f"Ждем ответа",
+        reply_markup=types.ReplyKeyboardRemove()
+    )
+    hotels = get_hotels(params=parameters)
+    if not hotels or len(hotels.keys())<1:
+        await message.answer('Ничего не найдено. измените параметры поиска')
+    elif 'bad_request' in hotels:
+        await message.answer('Что то сломалось на стороне API, попробуйте позже')
+    else:
+        await message.answer(f'Найдено отелей: {len(hotels.items())}')
+        for hotel_id, hotel_info in hotels.items():
+            list_of_urls = hotel_info['photo']
+            message = hotel_info['message']
+            if len(list_of_urls)<1:
+                await message.answer(text=message, parse_mode='HTML')
+            else:
+                media_group = [types.InputMediaPhoto(media=i_elem) for i_elem in list_of_urls]
     await state.finish()
 
 

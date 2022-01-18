@@ -40,20 +40,20 @@ async def hotels_buttons(message: types.Message):
                 text = loc_name,
                 callback_data=f'code{loc_id}'
             ))
-            city_keyboard.add(types.InlineKeyboardButton(
-                text='wrong door',
+        city_keyboard.add(types.InlineKeyboardButton(
+                text='Нет моего варианта',
                 callback_data='code_red'
             ))
-            await message.answer('жми кнопка', reply_markup=city_keyboard)
+        await message.answer('Нажмите кнопку', reply_markup=city_keyboard)
         await HotelOrder.waiting_for_city_answer_h.set()
 
 
 async def city_name_chosen(call: types.CallbackQuery, state: FSMContext):
-    if call.data[4:] == 'red':
+    if call.data == 'code_red':
         await call.answer("Введите название города.")
         return
     await state.update_data(city_id=call.data[4:])
-    await call.answer("сколько отелей выводить ?")
+    await call.message.answer("сколько отелей выводить ?")
     await HotelOrder.next()
     await HotelOrder.waiting_for_hotel_number_h.set()
 

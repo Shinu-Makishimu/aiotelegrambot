@@ -14,6 +14,8 @@ class HotelOrder(StatesGroup):
     waiting_for_hotel_number_b = State()
     waiting_for_photo_number_b = State()
     waiting_for_currency_b = State()
+    waiting_for_radius_b = State()
+    waiting_for_price_b = State()
     waiting_for_history_saving_b = State()
 
 
@@ -41,26 +43,26 @@ async def hotels_buttons(message: types.Message):
                 text = loc_name,
                 callback_data=f'code{loc_id}'
             ))
-            city_keyboard.add(types.InlineKeyboardButton(
-                text='wrong door',
+        city_keyboard.add(types.InlineKeyboardButton(
+                text='Тут нет моего варианта',
                 callback_data='code_red'
             ))
-            await message.answer('жми кнопка', reply_markup=city_keyboard)
+        await message.answer('Нажмите кнопку', reply_markup=city_keyboard)
         await HotelOrder.waiting_for_city_answer_b.set()
 
 
 async def city_name_chosen(call: types.CallbackQuery, state: FSMContext):
-    if call.data[4:] == 'red':
+    if call.data == 'code_red':
         await call.answer("Введите название города.")
         return
     await state.update_data(city_id=call.data[4:])
-    await call.answer("сколько отелей выводить ?")
+    await call.message.answer("сколько отелей выводить ?")
     await HotelOrder.next()
     await HotelOrder.waiting_for_hotel_number_b.set()
 
 
 async def hotel_count_chosen(message: types.Message, state: FSMContext):
-    if not message.text.isdigit() or 0 > int(message.text) >20:
+    if not message.text.isdigit() or 0 > int(message.text) > 20:
         await message.answer("20 максимум и ввод должен быть только числами")
         return
     await state.update_data(hotel_number=message.text)
@@ -87,24 +89,36 @@ async def currency_chosen(message: types.Message,state: FSMContext):
     if message.text not in ['RUB', 'EUR', 'USD']:
         await message.answer('Тыкай в кнопки!')
         return
-
     await state.update_data(currency=message.text)
     await HotelOrder.next()
+    await message.answer('Введите радиус поиска от центра')
+    await HotelOrder.waiting_for_radius_b.set()
 
 
 async def radius_chosen(message: types.Message, state: FSMContext):
-    pass
+    if not message.text.isdigit():
+        await message.answer('Надо вводить цифры')
+        return
+    await state.update_data(radius=message.text)
+    await HotelOrder.next()
+    await message.answer('Введите минимальню и максимальную цену через пробел')
+    await HotelOrder.waiting_for_price_b.set()
 
 
 async def min_max_price_chosen(message: types.Message, state: FSMContext):
+    if not message.text.replace(' ', '').isdigit() and len(message.text.split())!=2:
+        await message.answer('Надо ввести только цифры разделённые пробелом')
+        return
 
+    min_price, max_price = sorted(message.text.strip().split(), key=int)
+    await state.update_data(max_price=max_price)
+    await state.update_data(min_price=min_price)
 
     keyboard = types.ReplyKeyboardMarkup(row_width=3, resize_keyboard=True)
-    text=('ДА', 'НЕТ')
+    text = ('ДА', 'НЕТ')
     keyboard.row(*(types.KeyboardButton(txt) for txt in text))
     await message.answer("сохранить историю?", reply_markup=keyboard)
     await HotelOrder.waiting_for_history_saving_b.set()
-
 
 
 async def history_chosen(message: types.Message, state: FSMContext):
@@ -118,7 +132,10 @@ async def history_chosen(message: types.Message, state: FSMContext):
         'hotel_count': user_data['hotel_number'],
         'photo_count': user_data['photo_number'],
         'command': 'bestdeal',
-        'currency': user_data['currency']
+        'currency': user_data['currency'],
+        'distance': user_data['radius'],
+        'max_price': user_data['max_price'],
+        'min_price': user_data['min_price']
     }
     await message.answer(f"Вы заказали {parameters}.\nисторию сохранять? {message.text}", reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
@@ -131,4 +148,6 @@ def register_handlers_bestdeal(dp: Dispatcher):
     dp.register_message_handler(hotel_count_chosen, state=HotelOrder.waiting_for_hotel_number_b)
     dp.register_message_handler(photo_count_chosen, state=HotelOrder.waiting_for_photo_number_b)
     dp.register_message_handler(currency_chosen, state=HotelOrder.waiting_for_currency_b)
+    dp.register_message_handler(radius_chosen, state=HotelOrder.waiting_for_radius_b)
+    dp.register_message_handler(min_max_price_chosen, state = HotelOrder.waiting_for_price_b)
     dp.register_message_handler(history_chosen, state=HotelOrder.waiting_for_history_saving_b)
