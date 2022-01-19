@@ -272,9 +272,9 @@ def hotel_rating(rating: float) -> str:
 
 def google_maps_link(coordinates: dict) -> str:
     """
-    формирует ссылку на карты гугл.
-    :param coordinates: словарь с широтой и долготой
-    :return: строка ссылки или нет данных
+    Create google maps lin
+    :param
+    :return:
     """
     if not coordinates:
         return 'No information'
