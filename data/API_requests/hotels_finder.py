@@ -4,9 +4,6 @@ import datetime
 from typing import Any, Union, Dict
 from loguru import logger
 
-# from accessory import get_date
-# from database import get_settings
-# from language import interface
 from settings import H_API_TOKEN
 from data.API_requests.photos import make_photo_list
 
@@ -231,36 +228,31 @@ def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Di
 
 def hotel_price(hotel) -> float or str:
     """
-    Функция формирует цену отеля
+    Function create price
 
-    :param hotel: словарь с данными отеля полученными от api
-    :return: возвращаем цену, округленную до двух знаков. Если цену получить не удалось, возвращаем "нет данных"
+    :param hotel: Dictionary with information about hotel
+    :return:
     """
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
 
-    try:
-        if hotel.get('ratePlan').get('price').get('exactCurrent'):
-            temp_price = hotel.get('ratePlan').get('price').get('exactCurrent')
-        else:
-            temp_price = hotel.get('ratePlan').get('price').get('current')
+    price = 'No information'
+    if hotel.get('ratePlan').get('price').get('exactCurrent'):
+        price = hotel.get('ratePlan').get('price').get('exactCurrent')
+    else:
+        price = hotel.get('ratePlan').get('price').get('current')
 
-        temp_price = int(re.sub(r'[^0-9]', '', temp_price))
-        price = round(temp_price, 2)
-    except Exception as error:
-        logger.warning(f'price crushed with {error}')
-        price = 'Нет информации'
     return price
 
 
 def hotel_address(hotel: dict) -> str:
     """
-    Функция формирования адреса. Если адреса нет, возвращаем нет данных
-    :param hotel: словарь с данными отеля полученными из API
+    Create hotel address
+    :param hotel:
 
-    :return: строка с адресом, если адреса нет, возвращаем нет данных
+    :return:
     """
     logger.info(f'Function {hotel_address.__name__} called with argument {hotel}')
-    message = 'Нет информации'
+    message = 'No information'
     if hotel.get('address'):
         message = hotel.get('address').get('streetAddress', message)
     return message
@@ -268,14 +260,13 @@ def hotel_address(hotel: dict) -> str:
 
 def hotel_rating(rating: float) -> str:
     """
-    Рейтинг отеля.
-    :param rating: число звезд.
-    :return: возвращает строку с количеством звездочек, равными рейтингу отеля, если
-    информации нет то возвращает строку нет данных
+    Hotels rating.
+    :param rating: stars number.
+    :return:
     """
     logger.info(f'Function {hotel_rating.__name__} called with {rating}')
     if not rating:
-        return 'Нет информаци'
+        return 'No information'
     return '⭐' * int(rating)
 
 
@@ -286,8 +277,8 @@ def google_maps_link(coordinates: dict) -> str:
     :return: строка ссылки или нет данных
     """
     if not coordinates:
-        return 'Нет информации'
-    text = 'Ссылка на гуглокарты'
+        return 'No information'
+    text = 'Google maps'
     link = f"http://www.google.com/maps/place/{coordinates['lat']},{coordinates['lon']}"
     r = f'<a href="{link}">{text}</a>'
     return r
