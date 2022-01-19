@@ -19,10 +19,10 @@ order = {
 
 def get_hotels(params: Dict ) -> Dict or None:
     """
-    Функция получает юзер айди, на его основе формирует с помощью вспомогательных функций список результатов
+    The function receives a dictionary of parameters. Generates a dictionary of search results using helper functions
 
-    :return: если сайт вернул bad request, возвращает bad request, если результата нет, none
-     иначе словарь с результатами
+    :return: if the site returned an invalid request, it returns an invalid request, if there is no result - None,
+    otherwise a dictionary with results
     """
 
     logger.info(f'function {get_hotels.__name__} was called with  {params}')
@@ -62,11 +62,12 @@ def get_hotels(params: Dict ) -> Dict or None:
 
 def request_hotels(p: Dict, page=1) -> Dict:
     """
-    функция запроса списка отелей из апи
+    This function requests a list of hotels from the API
+
 
     :param p:
     :param page:
-    :return: возвращает словарь
+    :return: dictionary
     """
     logger.info(f'Function {request_hotels.__name__} called with argument: parameters = {p}')
     url = "https://hotels4.p.rapidapi.com/properties/list"
@@ -108,7 +109,7 @@ def request_hotels(p: Dict, page=1) -> Dict:
 
 def structure_hotels_info(lang, data) -> Dict or None:
     """
-    Структурирование результатов поиск для удобной обработки в дальнейшем
+    Structuring search results for easy processing.
 
     :param data:
     :return:
@@ -135,8 +136,6 @@ def structure_hotels_info(lang, data) -> Dict or None:
             hotel['id'] = i_hotel.get('id')
             hotel['star_rating'] = i_hotel.get('starRating', 0)
             hotel['price'] = hotel_price(i_hotel)
-            if not hotel['price']:
-                continue
             hotel['distance'] = i_hotel.get(
                 'landmarks')[0].get(
                     'distance',
@@ -152,10 +151,10 @@ def structure_hotels_info(lang, data) -> Dict or None:
 
 def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[dict]:
     """
-    фильтрация  отелей по дистанции.
-    :param hotels: Список словарей отелей
-    :param distance: дистанция в километрах
-    :param limit: ограничение на количество отелей в списке
+    Hotel filtering by distance .
+    :param hotels: List of hotel dictionaries
+    :param distance: distance in kilometers
+    :param limit: limit on the number of hotels in the list
     :return:
     """
     logger.info(f'Function {choose_best_hotels.__name__} called with arguments: '
@@ -169,16 +168,16 @@ def choose_best_hotels(hotels: list[dict], distance: float, limit: int) -> list[
 
 def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Dict[str, Union[str, list[str]]]]:
     """
-    формирование словаря с сообщением для вывода пользователю и фотографиями
+    Creating a dictionary with a message and photos to display to the user
 
     :param parameters:
-    :param hotels: словарь с отелями
+    :param hotels: List of hotel dictionaries
     :return: hotels_info =
                 {
                     "hotel_ID":
                         {
-                            "photo": список изображений
-                            "message": сформированный ответ для пользователя
+                            "photo": Photo list
+                            "message": Message for send
                         }
                 }
     """
@@ -194,15 +193,15 @@ def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Di
         )
         hot_rat = hotel_rating(rating=hotel.get('star_rating'))
 
-        lang_hotel = 'Отель ',
+        lang_hotel = 'Hotel name ',
         name_hotel = hotel.get('name'),
-        rating_hotel = 'Класс отеля ',
+        rating_hotel = 'Rating  ',
         rat_h = hot_rat,
-        pri_hot = 'Цена за ночь ',
+        pri_hot = 'Price for night ',
         price = str(hotel['price']) + ' ' + currency,
-        dis_h = 'Расстояние от центра города ',
+        dis_h = 'Distance from centre  ',
         dist = hotel.get('distance'),
-        addr_h = 'Адрес ',
+        addr_h = 'Address ',
         addr = hotel.get('address'),
         link = google_maps_link(coordinates=hotel['coordinates'])
 
@@ -232,7 +231,7 @@ def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Di
 
 def hotel_price(hotel) -> float or str:
     """
-    Функция формирует цену отеля. количество дней проживания перемножается на стоимость суток.
+    Функция формирует цену отеля
 
     :param hotel: словарь с данными отеля полученными от api
     :return: возвращаем цену, округленную до двух знаков. Если цену получить не удалось, возвращаем "нет данных"
@@ -294,16 +293,3 @@ def google_maps_link(coordinates: dict) -> str:
     return r
 
 
-# def days_count(check_in: int, check_out: int):
-#     """
-#     счетчик дней для вычисления итоговой стоимости проживания
-#     :param check_in: дата заезда
-#     :param check_out: дата выезда
-#     :return: целое число дней
-#     """
-#     logger.info(f'Function {days_count.__name__} was called with { check_in} {check_out}')
-#     date_in = get_date(tmstmp=check_in, days=True)
-#     date_out = get_date(tmstmp=check_out, days=True)
-#     date_result = abs((date_out-date_in).days)
-#     logger.info(f'Function {days_count.__name__} make some math: { date_out} minus {date_in} = {date_result}')
-#     return date_result

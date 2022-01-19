@@ -7,10 +7,10 @@ from settings import PHOTO_SIZE, H_API_TOKEN
 
 def make_photo_list(hotel_id: str, counter: int) -> List[str]:
     """
-    Функция формирует список ссылок на фото отеля
-    :param hotel_id: id отеля
-    :param counter: счетчик фотографий
-    :return: список со ссылками на фотографии
+    The function generates a list of links to hotel photos
+    :param hotel_id:
+    :param counter: photo numbers
+    :return: List of links
     """
     logger.info(f'function {make_photo_list.__name__} was called')
     if counter == 0:
@@ -23,10 +23,10 @@ def make_photo_list(hotel_id: str, counter: int) -> List[str]:
 
 def request_photos(hotel_id, counter) -> List or None:
     """
-    функция запрашивает у апи фотографии
-    :param hotel_id: id отеля
-    :param counter: счетчик фотографий
-    :return:возвращает список фотографий или none если запрос не удался
+    Request pgotos to API
+    :param hotel_id:
+    :param counter:
+    :return:List of photos or None
     """
     logger.info(f'function {request_photos.__name__} was called with message and use args: '
                 f'lang: {hotel_id}\t text: {counter}')

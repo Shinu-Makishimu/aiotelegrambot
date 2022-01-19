@@ -5,14 +5,13 @@ from typing import Dict, Any
 
 from loguru import logger
 from settings import H_API_TOKEN
-# from database import get_settings
-from aiogram.dispatcher import FSMContext
+
 
 def make_locations_list(message: types.Message) -> Dict:
     """
-    Функция, формирующая словарь локаций, для формирования клавиатуры локаций
-    :param message: сообщение, полученное от пользователя.
-    :return: словарь локаций, полученных в результате запроса к api
+    A function that generates a dictionary of locations to generate a keyboard of locations
+    :param message: message object
+    :return: Locations dictionary from api
     """
     logger.info(f'function {make_locations_list.__name__} was called with arg {message.text}')
     data = request_locations(message)
@@ -28,9 +27,9 @@ def make_locations_list(message: types.Message) -> Dict:
 
 def request_locations(message: types.Message) -> Dict:
     """
-    Функция осуществляет запрос к API
-    :param message: сообщение пользователя
-    :return: словарь результатов
+    Request to API
+    :param message:
+    :return:
     """
     language_replace = {
         'ru':'ru_RU',
@@ -40,7 +39,7 @@ def request_locations(message: types.Message) -> Dict:
     url = "https://hotels4.p.rapidapi.com/locations/v2/search"
     language = message.from_user.language_code
     if language != 'ru':
-        language ='en'
+        language = 'en'
     language = language_replace[language]
     logger.info(f'function {request_locations.__name__} was called with message and use args: '
                 f'lang: {language}\t text: {message.text}')
@@ -62,9 +61,9 @@ def request_locations(message: types.Message) -> Dict:
 
 def delete_tags(html_text: Any) -> str:
     """
-    функция удаления тегов из текста
-    :param html_text: строка с тегами
-    :return: строка без тегов
+    Delite html tegs in text
+    :param html_text:
+    :return:
     """
     logger.info(f'function {delete_tags.__name__} was called')
     text = re.sub('<([^<>]*)>', '', html_text)
