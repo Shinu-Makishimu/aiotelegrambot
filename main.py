@@ -12,9 +12,6 @@ from data.bot_requests.highprice import register_handlers_highprice
 from data.bot_requests.bestdeal import register_handlers_bestdeal
 
 
-
-
-
 async def set_commands(bot: Bot) -> None:
     """
     This func creates a command menu

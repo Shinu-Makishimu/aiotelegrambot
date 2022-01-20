@@ -1,9 +1,12 @@
+import datetime
+
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from data.API_requests.hotels_finder import get_hotels
 from data.API_requests.locations import make_locations_list
+# from data.bot_requests.history import set_history
 
 
 class HotelOrder(StatesGroup):
@@ -31,7 +34,7 @@ async def hotels_start(message: types.Message) -> None:
     await HotelOrder.waiting_for_city_name_l.set()
 
 
-async def hotels_buttons(message: types.Message) -> None:
+async def hotels_buttons(message: types.Message, state: FSMContext) -> None:
     """
     This function use get_location function from locations.py module,  (API_requests pocket).
     :param message: message object
@@ -39,7 +42,6 @@ async def hotels_buttons(message: types.Message) -> None:
     """
 
     loc = make_locations_list(message=message)
-
     if len(loc) < 1 or not loc:
         await message.answer("No result, change query")
         return
@@ -48,13 +50,14 @@ async def hotels_buttons(message: types.Message) -> None:
         return
     else:
         city_keyboard = types.InlineKeyboardMarkup()
-
+        city_dict = dict()
         for loc_name, loc_id in loc.items():
+            city_dict.update({loc_id: loc_name})
             city_keyboard.add(types.InlineKeyboardButton(
                 text=loc_name,
                 callback_data=f'code{loc_id}'
             ))
-
+        await state.update_data(cities=city_dict)
         city_keyboard.add(types.InlineKeyboardButton(
                 text='I want to find another city ',
                 callback_data='codered'
@@ -140,14 +143,19 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
         language = language_replace['en']
     else:
         language = language_replace['ru']
+    city_name = user_data.get('cities').get(user_data['city_id'])
     parameters = {
         'city': user_data['city_id'],
+        'city_name': city_name,
         'hotel_count': user_data['hotel_number'],
         'photo_count': user_data['photo_number'],
         'command': 'lowprice',
         'currency': user_data['currency'],
-        'language': language
+        'language': language,
+        'req_date': datetime.date.today()
     }
+    # if user_data['save_history'] == 'YES':
+    #     create_history_record(user_id=message.from_user.id, query= parameters)
     await message.answer(
         f"loading, please wait",
         reply_markup=types.ReplyKeyboardRemove()
@@ -169,7 +177,6 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
                     link = f"{photo}"
                     r = f'<a href="{link}">{text}</a>'
                     await message.answer(text=r, parse_mode='HTML')
-
     await state.finish()
 
 

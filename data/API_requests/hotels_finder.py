@@ -1,4 +1,3 @@
-import re
 import requests
 import datetime
 from typing import Any, Union, Dict
@@ -180,7 +179,6 @@ def generate_hotels_descriptions(hotels: Dict, parameters: Dict) -> Dict[Any, Di
     """
     logger.info(f'Function {generate_hotels_descriptions.__name__} called with argument {hotels}')
     hotels_info = dict()
-    lang = parameters['language']
     photo_number = parameters['photo_count']
     currency = parameters['currency']
     for hotel in hotels:
@@ -235,11 +233,12 @@ def hotel_price(hotel) -> float or str:
     """
     logger.info(f'Function {hotel_price.__name__} called with argument {hotel}')
 
-    price = 'No information'
     if hotel.get('ratePlan').get('price').get('exactCurrent'):
         price = hotel.get('ratePlan').get('price').get('exactCurrent')
-    else:
+    elif hotel.get('ratePlan').get('price').get('current'):
         price = hotel.get('ratePlan').get('price').get('current')
+    else:
+        price = 'No information'
 
     return price
 

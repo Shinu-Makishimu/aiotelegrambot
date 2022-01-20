@@ -1,135 +1,70 @@
-# Бот -  с функцией поиска отелей в мессенджере Telegram
+# Bot - an example of working with aiogram
+This bot can find hotels in any city in the world
 
-
-
-## Особенности
-
-This bot can:
-* Искать отели по самой низкой или высокой цене;
-* Искать отели по соотношению цена/расстояние от центра города;  
-* задавать количество выводимых отелей;
-* задавать количество выводимых фото найденных отелей
-* задавать диапазон цен.
-* хранить и предоставлять для просмотра и повторного использования историю запросов пользователя
-
-## Особености функционирования.
-
-* Этот бот демонстрация работы aiogram
-* 
 
 ## Requirements
 
 * Python 3.9+
-* [aiogram]() – Python Telegram Bot API
-* [requests](https://github.com/psf/requests) - библиотека requests
-* [redis](https://redis.io/) - хранилище поисковых параметров текущей сессии пользователя
-* [sqlite3](https://www.sqlite.org/) - хранилище параметров языка, валюты и истории поисковых запросов пользователя
+* [aiogram](https://github.com/aiogram/aiogram) – asynchronous framework for Telegram Bot API
+* [requests](https://github.com/psf/requests) - Requests is a simple, yet elegant, HTTP library.
+* [aioredis](https://aioredis.readthedocs.io/en/latest/) - The library is intended to provide simple and clear interface to Redis based on asyncio.
+* [sqlite3](https://www.sqlite.org/) - database engine
 * [loguru](https://github.com/Delgan/loguru) Логирование выполняемых команд и функций бота.
 
-Вы можете установить все зависимости, выполнив следующую команду: `pip install -r requirements.txt`
+You need to create an .env file with tokens for telegram and API to run bot.
+Variable name for telegram: KEY, for API: APIKEY. Their initialization is done in the settings module
 
-Для корректной работы требуется запущенный Redis server версии не ниже 3.0.504.
+You can install all dependencies by running the following command: `pip install -r requirements.txt`
 
-
-
-## Команды бота
-
-* `/start` - запуск бота, выполняется автоматически при подключении к боту.
-* `/help` - список команд и их описание
-* `/lowprice` - топ дешевых отелей
-* `/highprice` - топ дорогих отелей
-* `/bestdeal` - лучшие предложения
-* `/settings` - меню с настройками  
-* `/history` - меню с историей запросов, при её наличии  
+For correct operation, a running Redis server of version 3.0.504 or higher is required..
 
 
-## Как работать с ботом
+## Bot commands
 
-Список всех команд, поддерживаемых ботом, можно посмотреть по команде `/help`
-
-
-##Команда '/history'
-При наличии отсутствия поисковых запросов в базе, бот ответит
-
-![нет истории](img/nodata.png)
-
-Если запросы в истории есть, бот предложит выбрать один из запросов что бы увидеть дополнительную информацию о запросе
-
-![есть история ](img/history.png)
-
-что бы увидеть подробности кликните на соответствующую кнопку.
-
-![пример истории](img/history2.png)
-
-далее бот предложит повторить поиск или вернуться назад.
+* `/start` - bot launch, performed automatically when connected to the bot.
+* `/help` - help message
+* `/lowprice` - find cheapest hotels
+* `/highprice` - find most expensive hotels
+* `/bestdeal` - the best offer for price and distance from the center
+* `/history` - menu with requests history, if available
 
 
+Short instructions for working with the bot. In case of erroneous input, the bot will display a corresponding message and ask you to enter the value again.
 
-Далее приведена инструкция по работе с ботом. При ошибочном вводе бот выведет соответствующее сообщение и попросит ввести значение повторно.
+### find cheapest hotels
 
-### Топ дешевых отелей
-
-1. Введите команду `/lowprice`. Бот запросит город, в котором вы хотите искать отели.
-2. Введите название населенного пункта. Бот выполнит запрос к hotels api и выведет список локаций, названия которых похожи на введенный город. 
-Так же будет доступна кнопка отказа от предложенных результатов. При нажатии на неё (а так же при отсутствии результатов 
-поиска) бот попросит ввести название города снова. Если по запросу будет найден только один результат, бот без вопросов перейдет к следующему пункту опроса.
+1. Enter the `/lowprice` command. The bot will ask for the city in which you want to search for hotels.
+2. Enter the name of the locality. The bot will make a request to the hotels api and return a list of locations whose names are similar to the entered city.
+There will also be a button to refuse the proposed results. When you click on it (as well as in the absence of results
+search), the bot will ask you to enter the name of the city again.
    
-Ответ на запрос "омск":
-
-![Локации](img/locations.png)
-   
-3. Выберите один из предложенных вариантов, наиболее подходящих вашему запросу.
-4. Бот запросит количество отелей, которые вы хотите вывести в качестве результата. Введите количество отелей. 
-5. Бот запросит количество фотографий которое должно быть выведено к каждому отелю.
-6. Бот покажет календарь и предложит выбрать дату заезда.
-
-**Порядок выбора:** Сначала год, потом месяц, потом день.
-
-Календарь заезда:
-
-![календарь](img/calendar.png)
-
-**Внимание!** Дата заезда должна быть не меньше завтрашнего дня.
-
-6.1 бот покажет календарь снова и предложит выбрать дату выезда. 
-
-**Внимание!** дата выезда должна быть не меньше даты заезда. 
-В случае некорректного ввода, бот укажет на ошибку и предложит ввести даты снова, начиная с даты заезда.
-
-Календарь выезда:
-
-![календарь](img/calendar2.png)
-
-7. Бот выполнит следующий запрос к hotels api и выведет список отелей с указанием названия, класса, цены, адреса, 
-расстояния от центра и ссылку на расположение отеля на картах google.
-
-Пример результата:
-
-![Отель](img/hotel.png)
-
-8. Бот задаст вопрос о сохранении результатов поиска. При согласии бот сохранит вашу историю в базе данных, 
-при отказе параметры запроса будут удалены немедленно
-
-![сохранение](img/save.png)
+3. bot will ask for the number of hotels you want to display as a result.
+4. bot will ask for the number of photos that should be displayed for each hotel.
+5. bot will ask you if you want to save the search results. If you agree, the bot will save your history in the database,
+on failure, the request parameters will be lost.
+6. bot will execute the following request to the hotels api and display a list of hotels with the name, class, price, address,
+distance from the center and a link to the location of the hotel on google maps.
 
 
-### Топ дорогих отелей
 
-1. Для получения списка самых дорогих отелей введите команду `/highprice`и выполните пункты 2 - 8 из инструкции выше для топа дешевых отелей
+### find most expensive hotels
 
-### Лучшие предложения
+1. 
+To get a list of the most expensive hotels, enter the command `/highprice` and follow steps 2 - 7 from the instructions above for the top cheap hotels
 
-1. Введите команду `/bestdeal`. Выполните пункты 2-6 из инструкции выше для топа дешевых отелей.
-2. Бот запросит радиус поиска от центра города в километрах. Ввод должен быть целым положительным числом. 
-Внимание! Расстояние от центра города для отеля выдаётся API hotels.com и соответствие действительности **НЕ ГАРАНТИРУЕТСЯ**
-3. Введите минимальную и максимальную цену через пробел. Ввод должен содержать только два числа через пробел без символов или букв.
-4. Бот выполнит следующий запрос к hotels api и выведет список отелей с указанием названия, класса, цены, адреса, 
-расстояния от центра и ссылку на расположение отеля на картах google.
 
-### Рекомендации 
+### Best deal
+1. Enter the `/bestdeal` command. Follow steps 2-5 from the instructions above for the top cheap hotels.
+2. The bot will request a search radius from the city center in kilometers. The input must be a positive integer.
+Attention! The distance from the city center for the hotel is given by the hotels.com API and is **NOT GUARANTEED**
+3. Enter the minimum and maximum price separated by a space. The input must contain only two numbers separated by a space without symbols or letters.
+4. The bot will execute the following request to the hotels api and display a list of hotels with the name, class, price, address,
+distance from the center and a link to the location of the hotel on google maps.
 
-1. Название города должно состоять только из букв русского или английского алфавита и символа дефис.
-2. Диапазон цен представляет собой два целых положительных числа, разделенных пробелом, написанных в одну строку.
-3. Максимальное расстояние от центра города должно быть написано в виде положительного целого числа.
-4. Количество выводимых отелей — целое положительное число. Максимальное возможное количество - 20, минимальное 1
-5. Количество фотографий отеля — целое положительное число. Максимально возможное количество - 5, минимальное - 0
+### Recommends 
+
+1. The name of the city must consist only of letters of the Russian or English alphabet.
+2. The price range is two positive integers separated by a space, written on one line.
+3. The maximum distance from the city center must be written as a positive integer.
+4. The number of displayed hotels is a positive integer. The maximum possible number is 20, the minimum is 1
+5. The number of hotel photos is a positive integer. The maximum possible number is 5, the minimum is 0
