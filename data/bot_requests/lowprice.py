@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from data.API_requests.hotels_finder import get_hotels
 from data.API_requests.locations import make_locations_list
-# from data.bot_requests.history import set_history
+from data.bot_requests.history import set_history
 
 
 class HotelOrder(StatesGroup):
@@ -37,6 +37,7 @@ async def hotels_start(message: types.Message) -> None:
 async def hotels_buttons(message: types.Message, state: FSMContext) -> None:
     """
     This function use get_location function from locations.py module,  (API_requests pocket).
+    :param state:
     :param message: message object
     :return:
     """
@@ -68,6 +69,7 @@ async def hotels_buttons(message: types.Message, state: FSMContext) -> None:
 
 
 async def city_name_chosen(call: types.CallbackQuery, state: FSMContext) -> None:
+    await call.answer()
     if call.data == 'code_red':
         await call.message.answer("Send city name again")
         return
@@ -154,8 +156,8 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
         'language': language,
         'req_date': datetime.date.today()
     }
-    # if user_data['save_history'] == 'YES':
-    #     create_history_record(user_id=message.from_user.id, query= parameters)
+    if user_data['save_history'] == 'YES':
+        set_history(user_id=message.from_user.id, parameters=parameters)
     await message.answer(
         f"loading, please wait",
         reply_markup=types.ReplyKeyboardRemove()
@@ -171,7 +173,7 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
             list_of_urls = hotel_info['photo']
             txt = hotel_info['message']
             await message.answer(text=txt, parse_mode='HTML')
-            if len(list_of_urls)>0:
+            if len(list_of_urls) > 0:
                 for number, photo in enumerate(list_of_urls):
                     text = f'фото номер {number + 1}'
                     link = f"{photo}"

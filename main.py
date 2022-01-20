@@ -1,15 +1,17 @@
 import asyncio
 
+from os import path
 from loguru import logger
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
 import settings
+from data.bot_requests.history import create_bd_if_not_exist
 from data.bot_requests.common import register_handlers_common
 from data.bot_requests.lowprice import register_handlers_lowprice
-from data.bot_requests.highprice import register_handlers_highprice
 from data.bot_requests.bestdeal import register_handlers_bestdeal
+from data.bot_requests.highprice import register_handlers_highprice
 
 
 async def set_commands(bot: Bot) -> None:
@@ -50,4 +52,6 @@ async def main() -> None:
     await dp.start_polling()
 
 if __name__ == '__main__':
+    if not path.isfile(settings.NAME_DATABASE):
+        create_bd_if_not_exist()
     asyncio.run(main())
