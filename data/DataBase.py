@@ -48,7 +48,7 @@ def create_bd_if_not_exist() -> None:
         db.commit()
 
 
-def create_user_in_db(user_id: str, language: str) -> None:
+def create_user_in_db(user_id: str) -> None:
     """
     Функция создаёт пользователя в базе данных
 
@@ -56,11 +56,10 @@ def create_user_in_db(user_id: str, language: str) -> None:
     :param language: язык пользователя
     :return: None
     """
-    logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}\tlang {language}')
+    logger.info(f'Function {create_user_in_db.__name__} called and use args: user_id{user_id}')
 
     status = 'user'
-    if language != 'ru_RU':
-        language = 'en_US'
+    language = 'en_US'
 
     with sqlite3.connect(NAME_DATABASE) as db:
         cursor = db.cursor()
@@ -214,7 +213,8 @@ def set_history(user_id: str, parameters: dict) -> None:
     """
     logger.info(f'Function {set_history.__name__} called with argument: '
                 f'user_id {parameters}')
-
+    if not check_user_in_db(user_id):
+        create_user_in_db(user_id, )
     command = parameters['command']
 
     if command in ['lowprice', 'highprice']:

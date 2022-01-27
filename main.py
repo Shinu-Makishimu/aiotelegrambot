@@ -7,7 +7,7 @@ from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
 import settings
-from data.bot_requests.history import create_bd_if_not_exist
+import data.DataBase as db
 from data.bot_requests.common import register_handlers_common
 from data.bot_requests.lowprice import register_handlers_lowprice
 from data.bot_requests.bestdeal import register_handlers_bestdeal
@@ -53,5 +53,5 @@ async def main() -> None:
 
 if __name__ == '__main__':
     if not path.isfile(settings.NAME_DATABASE):
-        create_bd_if_not_exist()
+        db.create_bd_if_not_exist()
     asyncio.run(main())

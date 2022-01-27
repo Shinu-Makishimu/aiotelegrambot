@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from data.API_requests.hotels_finder import get_hotels
 from data.API_requests.locations import make_locations_list
-from data.bot_requests.history import set_history
+from data.DataBase import set_history
 
 
 class HotelOrder(StatesGroup):
@@ -29,7 +29,7 @@ async def hotels_start(message: types.Message) -> None:
     :return:
     """
     message_text = f'You have chosen the search for most cheapest hotels!\n ' \
-                   f'Now, send me city name'
+                   f'Now, send me city name (only English!)'
     await message.answer(message_text)
     await HotelOrder.waiting_for_city_name_l.set()
 
@@ -134,17 +134,7 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
         await message.answer("Just tap on buttons!")
         return
 
-    await state.update_data(save_history=message.text)
     user_data = await state.get_data()
-    language_replace = {
-        'ru': 'ru_RU',
-        'en': 'en_US'
-    }
-    language = message.from_user.language_code
-    if language != 'ru':
-        language = language_replace['en']
-    else:
-        language = language_replace['ru']
     city_name = user_data.get('cities').get(user_data['city_id'])
     parameters = {
         'city': user_data['city_id'],
@@ -153,11 +143,12 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
         'photo_count': user_data['photo_number'],
         'command': 'lowprice',
         'currency': user_data['currency'],
-        'language': language,
+        'language': 'en_US',
         'req_date': datetime.date.today()
     }
-    if user_data['save_history'] == 'YES':
+    if message.text == 'YES':
         set_history(user_id=message.from_user.id, parameters=parameters)
+
     await message.answer(
         f"loading, please wait",
         reply_markup=types.ReplyKeyboardRemove()
@@ -174,11 +165,12 @@ async def history_chosen(message: types.Message, state: FSMContext) -> None:
             txt = hotel_info['message']
             await message.answer(text=txt, parse_mode='HTML')
             if len(list_of_urls) > 0:
-                for number, photo in enumerate(list_of_urls):
-                    text = f'фото номер {number + 1}'
+                for number, photo in enumerate(list_of_urls, 1):
+                    text = f'photo N {number}'
                     link = f"{photo}"
                     r = f'<a href="{link}">{text}</a>'
                     await message.answer(text=r, parse_mode='HTML')
+    await message.answer('search has been completed. Bye!', reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
 
 

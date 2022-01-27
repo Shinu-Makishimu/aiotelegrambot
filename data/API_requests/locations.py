@@ -31,22 +31,14 @@ def request_locations(message: types.Message) -> Dict:
     :param message:
     :return:
     """
-    language_replace = {
-        'ru':'ru_RU',
-        'en':'en_US'
-    }
 
     url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-    language = message.from_user.language_code
-    if language != 'ru':
-        language = 'en'
-    language = language_replace[language]
     logger.info(f'function {request_locations.__name__} was called with message and use args: '
-                f'lang: {language}\t text: {message.text}')
+                f'\t text: {message.text}')
 
     querystring = {
         "query": message.text.strip(),
-        "locale": language
+        "locale": 'en_US'
     }
 
     headers = {
