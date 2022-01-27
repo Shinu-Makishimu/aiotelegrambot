@@ -7,6 +7,7 @@ from data.API_requests.hotels_finder import get_hotels
 from data.API_requests.locations import make_locations_list
 from data.DataBase import set_history
 
+
 class HotelOrder(StatesGroup):
     """
     State store
