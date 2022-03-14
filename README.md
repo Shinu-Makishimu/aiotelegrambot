@@ -9,7 +9,7 @@ This bot can find hotels in any city in the world
 * [requests](https://github.com/psf/requests) - Requests is a simple, yet elegant, HTTP library.
 * [aioredis](https://aioredis.readthedocs.io/en/latest/) - The library is intended to provide simple and clear interface to Redis based on asyncio.
 * [sqlite3](https://www.sqlite.org/) - database engine
-* [loguru](https://github.com/Delgan/loguru) Логирование выполняемых команд и функций бота.
+* [loguru](https://github.com/Delgan/loguru) 
 
 You need to create an .env file with tokens for telegram and API to run bot.
 Variable name for telegram: KEY, for API: APIKEY. Their initialization is done in the settings module
